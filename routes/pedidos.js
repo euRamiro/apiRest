@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('../mysql').pool;
+const login = require('../middleware/login');
 
 //get pedidos
-router.get('/', (req, res, next) => {
+router.get('/', login.opcional, (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) {return res.status(500).send({ error: error })}
         conn.query(
@@ -37,7 +38,7 @@ router.get('/', (req, res, next) => {
 });
 
 //insert pedido
-router.post('/', (req, res, next) => {
+router.post('/', login.obrigatorio, (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) {return res.status(500).send({ error: error })}
         conn.query(
@@ -80,7 +81,7 @@ router.post('/', (req, res, next) => {
 });
 
 //get 1 pedido
-router.get('/:id_pedido', (req, res, next) => {
+router.get('/:id_pedido', login.opcional, (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) {return res.status(500).send({ error: error })}
         conn.query(
@@ -117,7 +118,7 @@ router.get('/:id_pedido', (req, res, next) => {
 });
 
 //update pedido
-router.patch('/', (req, res, next) => {
+router.patch('/', login.obrigatorio, (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) {return res.status(500).send({ error: error })}
         conn.query(
@@ -159,7 +160,7 @@ router.patch('/', (req, res, next) => {
 });
 
 //delete pedido
-router.delete('/', (req, res, next) => {
+router.delete('/', login.obrigatorio, (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) {return res.status(500).send({ error: error })}
         conn.query(
