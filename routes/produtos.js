@@ -1,6 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const mysql =  require('../mysql').pool;
+const multer = require('multer');
+const moment = require('moment');
+
+const storage = multer.diskStorage({
+    destination: function (req, file, callback) {
+        callback(null, './uploads');
+    },
+    filename: function(req, file, callback) {
+        callback(null, moment().format('DDMMYYYY_hhmmss')+'_'+file.originalname);
+    }
+});
+const fileFilter = (req, file, callback) => {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        callback(null, true);
+    } else {
+        callback(null, false);
+    }
+}
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 5 //5mb
+    },
+    fileFilter: fileFilter
+});
 
 //get produtos
 router.get('/', (req, res, next) => {
@@ -16,7 +41,8 @@ router.get('/', (req, res, next) => {
                         return {
                             id: prod.id,
                             nome: prod.nome,
-                            preco: prod.preco, 
+                            preco: prod.preco,
+                            imagem: prod.imagem,
                             request: {
                                 tipo: 'GET',
                                 descricao: 'retorna detalhes de um produto...',
@@ -32,12 +58,13 @@ router.get('/', (req, res, next) => {
 });
 
 //insert produto
-router.post('/', (req, res, next) => {
+router.post('/', upload.single('produto_imagem'), (req, res, next) => {
+    console.log(req.file);
     mysql.getConnection((error, conn) => {
         if (error) {return res.status(500).send({ error: error })}
         conn.query(
-            'INSERT INTO produtos (nome, preco) VALUES (?, ?)',
-            [req.body.nome, req.body.preco],
+            'INSERT INTO produtos (nome, preco, imagem) VALUES (?, ?, ?)',
+            [req.body.nome, req.body.preco, req.file.path],
             (error, result, field) => {
                 conn.release();
                 if (error) {return res.status(500).send({ error: error })}
@@ -79,6 +106,7 @@ router.get('/:id_produto', (req, res, next) => {
                         id: result[0].id, 
                         nome: result[0].nome,
                         preco: result[0].preco,
+                        imagem: result[0].imagem,
                         request: {
                             tipo: 'GET',
                             descricao: 'retorna todos os produtos...',
